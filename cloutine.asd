@@ -32,5 +32,6 @@
 
 (defsystem cloutine/t
   :class :package-inferred-system
-  :depends-on (:rove)
+  :depends-on (:rove
+               "cloutine/t/pred-process")
   :perform (test-op (o c) (symbol-call :rove '#:run c)))
