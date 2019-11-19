@@ -14,7 +14,8 @@
   :class :package-inferred-system
   :author "eshamster"
   :license "LLGPL"
-  :depends-on (:cloutine/main)
+  :depends-on (:cloutine/main
+               :bordeaux-threads)
   :description "cloutine is a prototype of coroutine like goroutine"
   :long-description
   #.(with-open-file (stream (merge-pathnames
@@ -33,5 +34,6 @@
 (defsystem cloutine/t
   :class :package-inferred-system
   :depends-on (:rove
-               "cloutine/t/pred-process")
+               "cloutine/t/pred-process"
+               "cloutine/t/queue")
   :perform (test-op (o c) (symbol-call :rove '#:run c)))

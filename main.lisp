@@ -1,5 +1,8 @@
 (uiop/package:define-package :cloutine/main
   (:nicknames :cloutine)
-  (:use :cloutine/pred-process) ; TODO: Remove after other package importes it
+  (:use
+   ;; TODO: Followings should be remove after other package importes it
+   :cloutine/pred-process
+   :cloutine/queue)
   ;; (:use-reexport)
   )
