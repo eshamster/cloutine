@@ -35,5 +35,6 @@
   :class :package-inferred-system
   :depends-on (:rove
                "cloutine/t/pred-process"
-               "cloutine/t/queue")
+               "cloutine/t/queue"
+               "cloutine/t/multi-queue")
   :perform (test-op (o c) (symbol-call :rove '#:run c)))
