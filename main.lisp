@@ -2,7 +2,6 @@
   (:nicknames :cloutine)
   (:use
    ;; TODO: Followings should be remove after other package importes it
-   :cloutine/pred-process
-   :cloutine/queue)
+   :cloutine/real-threads)
   ;; (:use-reexport)
   )

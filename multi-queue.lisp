@@ -1,6 +1,7 @@
 (defpackage cloutine/multi-queue
   (:use :cl)
-  (:export :init-multi-queue
+  (:export :multi-queue
+           :init-multi-queue
            :queue-into
            :dequeue-from)
   (:import-from :cloutine/queue
@@ -35,10 +36,10 @@
 
 (defmethod queue-into ((mq multi-queue) queue-index value)
   (assert (< queue-index (queue-count mq)))
-  (signal-semaphore (mq-semaphore mq))
   (with-lock-held ((aref (mq-locks mq) queue-index))
     (queue (aref (mq-queues mq) queue-index)
-           value)))
+           value))
+  (signal-semaphore (mq-semaphore mq)))
 
 (defmethod dequeue-from ((mq multi-queue) prior-queue-index)
   "Dequeue from multi-queue.
