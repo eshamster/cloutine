@@ -75,7 +75,7 @@
                (progn (sleep 0.001)
                       (queue-pp rts pp))))))))
 
-(defmethod queue-pp ((rts real-threads) (pp pred-process))
+(defmethod queue-pp ((rts real-threads) process &optional (pred (lambda () t)))
   (debug-format t "~&Queue pred-process to thread indexed as ~D" *real-thread-index*)
   (when (threads-destroied-p rts)
     (error "The thread has been destroied."))
@@ -83,7 +83,9 @@
               (if *real-thread-index*
                   *real-thread-index*
                   0)
-              pp))
+              (make-instance 'pred-process
+                             :process process
+                             :pred pred)))
 
 (defmethod get-num-real-thread ((rt real-threads))
   (length (threads-instances rt)))
@@ -117,13 +119,15 @@
                                           :pred (lambda () t)))))
                   (dotimes (i 3)
                     (let ((i i))
-                      (test-queue (lambda ()
-                                    (debug-format t "~&TEST: ~D" i)
-                                    (dotimes (j 2)
-                                      (let ((j j))
-                                        (test-queue (lambda ()
-                                                      (debug-format t "~&TEST: ~D-~D" i j)
-                                                      (sleep 0.1)))))
+                      (queue-pp rts
+                                (lambda ()
+                                  (debug-format t "~&TEST: ~D" i)
+                                  (dotimes (j 2)
+                                    (let ((j j))
+                                      (queue-pp rts
+                                                (lambda ()
+                                                  (debug-format t "~&TEST: ~D-~D" i j)
+                                                  (sleep 0.1)))))
                                     (sleep 0.1))))))
                 (debug-print :end)
                 (sleep 1)
