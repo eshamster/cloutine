@@ -2,7 +2,11 @@
   (:use :cl)
   (:export :start-real-threads
            :destroy-real-threads
-           :queue-pp)
+           :queue-pp
+           ;; --- debug --- ;;
+           :*debug-print-p*
+           :debug-print
+           :debug-format)
   (:import-from :cloutine/pred-process
                 :pred-process
                 :resolved-p
