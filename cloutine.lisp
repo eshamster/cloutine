@@ -1,6 +1,7 @@
 (defpackage :cloutine/cloutine
   (:use :cl)
   (:export :init-cloutine
+           :destroy-cloutine
            :cloutine
            :clt)
   (:import-from :cloutine/real-threads
