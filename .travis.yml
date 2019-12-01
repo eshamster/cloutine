@@ -1,18 +1,14 @@
-language: lisp
 sudo: false
+service:
+  - docker
 
 env:
-  global:
-    - PATH=~/.roswell/bin:$PATH
-    - ROSWELL_INSTALL_DIR=$HOME/.roswell
   matrix:
     - LISP=sbcl-bin
-    - LISP=ccl-bin/1.11.5
+    - LISP=ccl-bin
 
-install:
-  - curl -L https://raw.githubusercontent.com/snmsts/roswell/release/scripts/install-for-ci.sh | sh
-  - ros install fukamachi/rove
+before_install:
+  - docker build -t test test-docker
 
 script:
-  - rove cloutine.asd
-
+  - test-docker/run.sh
