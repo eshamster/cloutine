@@ -3,7 +3,8 @@
   (:export :wait-group
            :add-wait
            :done-wait
-           :wait-all)
+           :wait-all
+           :with-done-wait)
   (:import-from :bordeaux-threads
                 :make-lock
                 :with-lock-held
@@ -37,3 +38,8 @@
 (defmethod wait-all ((wg wait-group))
   (dolist (sem (wg-sem-list wg))
     (wait-on-semaphore sem)))
+
+(defmacro with-done-wait ((wg) &body body)
+  `(unwind-protect
+        (progn ,@body)
+     (done-wait ,wg)))

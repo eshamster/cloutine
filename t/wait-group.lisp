@@ -32,6 +32,20 @@
                               (done-wait wg)))))
       (wait-all wg)
       (ok (= count 3))))
+  (testing "with-done-wait"
+    (let ((count 0)
+          (lock (make-lock))
+          (wg (make-instance 'wait-group)))
+      (add-wait wg 3)
+      (dotimes (i 3)
+        (make-test-thread 0.5
+                          (lambda ()
+                            (with-done-wait (wg)
+                              (sleep 0.1)
+                              (with-lock-held (lock)
+                                (incf count))))))
+      (wait-all wg)
+      (ok (= count 3))))
   (testing "Error if adding is not enough"
     (let ((wg (make-instance 'wait-group)))
       (add-wait wg 1)
