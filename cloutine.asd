@@ -36,5 +36,6 @@
   :depends-on (:rove
                "cloutine/t/pred-process"
                "cloutine/t/queue"
-               "cloutine/t/multi-queue")
+               "cloutine/t/multi-queue"
+               "cloutine/t/channel")
   :perform (test-op (o c) (symbol-call :rove '#:run c)))
