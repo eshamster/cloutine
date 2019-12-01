@@ -28,7 +28,7 @@
 
 ;; TODO: Make test
 
-(defparameter *debug-print-p* t)
+(defparameter *debug-print-p* nil)
 (defvar *real-thread-index* nil)
 
 (defclass real-thread ()
@@ -60,7 +60,8 @@
     (let ((rt-arr (threads-array rts)))
       (dotimes (i (length rt-arr))
         (let ((rt (aref rt-arr i)))
-          (destroy-thread (thread-instance rt)))))))
+          (destroy-thread (thread-instance rt))))
+      (debug-print :destroyed))))
 
 (defmethod process-thread ((rt real-thread) (rts real-threads) sem-to-wait-start)
   ;; wait until real-threads is initialized
@@ -108,36 +109,3 @@
   (when *debug-print-p*
     (with-lock-held (*debug-format-lock*)
       (apply #'format (list* stream control-string args)))))
-
-;; ----- easy test ----- ;;
-
-(defun test ()
-  (let ((*debug-print-p* t)
-        (rts (start-real-threads 3)))
-    (unwind-protect
-         (progn (debug-print :start)
-                (labels ((test-queue (process)
-                           (queue-pp rts (make-instance
-                                          'pred-process
-                                          :process process
-                                          :pred (lambda () t)))))
-                  (dotimes (i 3)
-                    (let ((i i))
-                      (queue-pp rts
-                                (lambda ()
-                                  (debug-format t "~&TEST: ~D" i)
-                                  (dotimes (j 2)
-                                    (let ((j j))
-                                      (queue-pp rts
-                                                (lambda ()
-                                                  (debug-format t "~&TEST: ~D-~D" i j)
-                                                  (sleep 0.1)))))
-                                    (sleep 0.1))))))
-                (debug-print :end)
-                (sleep 1)
-                (debug-print :sleep-end))
-      (progn (debug-print :destroy)
-             (destroy-real-threads rts)))))
-
-;; (test)
-
