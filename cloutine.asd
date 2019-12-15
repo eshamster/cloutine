@@ -15,7 +15,10 @@
   :author "eshamster"
   :license "LLGPL"
   :depends-on (:cloutine/main
-               :bordeaux-threads)
+               :bordeaux-threads
+               :cl-cont
+               :blackbird
+               :cl-async)
   :description "cloutine is a prototype of coroutine like goroutine"
   :long-description
   #.(with-open-file (stream (merge-pathnames
