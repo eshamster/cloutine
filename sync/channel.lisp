@@ -4,6 +4,10 @@
            :close-channel
            :<-chan
            :chan<-)
+  (:import-from :cloutine/cloutine
+                :clt
+                :init-cloutine
+                :destroy-cloutine)
   (:import-from :cloutine/queue
                 :init-queue
                 :queue
@@ -106,32 +110,24 @@ If max-resource is nil, there is no queue limit."
 ;; --- TEMP: easy-test --- ;;
 
 (defun test ()
- (as:with-event-loop ()
-   (let ((ch (make-channel)))
-     ;;
-     (cont:with-call/cc
-       (chan<- ch 100))
-     (cont:with-call/cc
-       (print (<-chan ch)))
-     ;;
-     (cont:with-call/cc
-       (print (<-chan ch)))
-     (cont:with-call/cc
-       (chan<- ch 200))
-     ;;
-     (cont:with-call/cc
-       (print (+ (<-chan ch) (<-chan ch))))
-     (cont:with-call/cc
-       (chan<- ch 300))
-     (sleep 0.5)
-     (cont:with-call/cc
-       (chan<- ch 400))
-     ;;
-     (cont:with-call/cc
-       (let ((a (<-chan ch)))
-         (print a)))
-     (cont:with-call/cc
-       (chan<- ch 500)))))
+  (init-cloutine 3)
+  (unwind-protect
+       (let ((ch (make-channel)))
+         (clt (chan<- ch 100))
+         (clt (format t "read after write: ~D" (<-chan ch)))
+         ;;
+         (clt (format t "read before write: ~D" (<-chan ch)))
+         (clt (chan<- ch 200))
+         ;;
+         (clt (format t "concat 2 channel: ~D" (+ (<-chan ch) (<-chan ch))))
+         (clt (chan<- ch 300))
+         (clt (sleep 0.5)
+              (chan<- ch 400))
+         (clt (let ((a (<-chan ch)))
+                (format t "bind to variable ~D" a)))
+         (clt (chan<- ch 500)))
+    (progn (sleep 1)
+           (destroy-cloutine)))))
 
 ;; (test)
 

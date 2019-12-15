@@ -10,7 +10,10 @@
                 :queue-pp
                 :*debug-print-p*
                 :debug-print
-                :debug-format))
+                :debug-format)
+  (:import-from :cl-cont
+                :with-call/cc
+                :without-call/cc))
 (in-package :cloutine/cloutine)
 
 (defvar *real-threads* nil)
@@ -24,7 +27,11 @@
     (setf *real-threads* nil)))
 
 (defmacro cloutine (&body body)
-  `(queue-pp *real-threads* (lambda () ,@body)))
+  `(queue-pp *real-threads*
+             (without-call/cc
+               (lambda ()
+                 (with-call/cc
+                   ,@body)))))
 
 (defmacro clt (&body body)
   `(cloutine ,@body))
@@ -34,21 +41,24 @@
 (defun test ()
   (let ((*debug-print-p* t))
     (init-cloutine 3)
-    (unwind-protect
-         (progn (debug-print :start)
-                (dotimes (i 3)
-                  (let ((i i))
-                    (clt
-                      (debug-format t "~&TEST: ~D" i)
-                      (dotimes (j 2)
-                        (let ((j j))
-                          (clt (debug-format t "~&TEST: ~D-~D" i j)
-                               (sleep 0.1))))
-                      (sleep 0.1))))
-                (debug-print :end)
-                (sleep 1)
-                (debug-print :sleep-end))
-      (progn (debug-print :destroy)
-             (destroy-cloutine)))))
+    (macrolet ((clt-debug (&body body)
+                 `(clt (let ((*debug-print-p* t))
+                         ,@body))))
+      (unwind-protect
+           (progn (debug-print :start)
+                  (dotimes (i 3)
+                    (let ((i i))
+                      (clt-debug
+                       (debug-format t "~&TEST: ~D" i)
+                       (dotimes (j 2)
+                         (let ((j j))
+                           (clt-debug (debug-format t "~&TEST: ~D-~D" i j)
+                                      (sleep 0.1))))
+                       (sleep 0.1))))
+                  (debug-print :end)
+                  (sleep 1)
+                  (debug-print :sleep-end))
+        (progn (debug-print :destroy)
+               (destroy-cloutine))))))
 
-;; (test)
+(test)
