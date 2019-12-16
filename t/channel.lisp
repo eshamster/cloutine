@@ -16,8 +16,7 @@
                 :wait-on-semaphore
                 :signal-semaphore)
   (:import-from :cl-cont
-                :defun/cc
-                :with-call/cc))
+                :defun/cc))
 (in-package cloutine/t/channel)
 
 (defmacro with-clt ((num-thread &optional (timeout 0.1)) &body body)

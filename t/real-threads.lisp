@@ -2,10 +2,6 @@
   (:use :cl
         :rove
         :cloutine/real-threads)
-  (:import-from :cloutine/sync/channel
-                :make-channel
-                :<-chan
-                :chan<-)
   (:import-from :cloutine/sync/wait-group
                 :wait-group
                 :add-wait
@@ -21,16 +17,19 @@
 
 (deftest real-threads-test
   (with-real-threads (rts 2)
-    (let ((ch (make-channel))
-          (wg (make-instance 'wait-group)))
+    (let ((wg (make-instance 'wait-group)))
       (add-wait wg 1)
       (queue-pp rts (lambda ()
                       (with-done-wait (wg)
-                        (dotimes (i 2)
-                          (let ((i i))
-                            (queue-pp rts (lambda ()
-                                            (sleep 0.01)
-                                            (chan<- ch i)))))
-                        (ok (find (<-chan ch) '(0 1)))
-                        (ok (find (<-chan ch) '(0 1))))))
+                        (let ((wg2 (make-instance 'wait-group))
+                              (arr (make-array 2)))
+                          (add-wait wg2 2)
+                          (dotimes (i 2)
+                            (let ((i i))
+                              (queue-pp rts (lambda ()
+                                              (with-done-wait (wg2)
+                                                (setf (aref arr i) (+ i 100)))))))
+                          (wait-all wg2)
+                          (ok (= (aref arr 0) 100))
+                          (ok (= (aref arr 1) 101))))))
       (wait-all wg))))
