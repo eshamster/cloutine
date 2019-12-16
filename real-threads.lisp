@@ -23,12 +23,13 @@
                 :destroy-thread
                 :make-semaphore
                 :wait-on-semaphore
-                :signal-semaphore))
+                :signal-semaphore)
+  (:import-from :cl-async
+                :with-event-loop))
 (in-package :cloutine/real-threads)
 
 ;; TODO: Make test
 
-(defparameter *debug-print-p* nil)
 (defvar *real-thread-index* nil)
 
 (defclass real-thread ()
@@ -66,19 +67,20 @@
 (defmethod process-thread ((rt real-thread) (rts real-threads) sem-to-wait-start)
   ;; wait until real-threads is initialized
   (wait-on-semaphore sem-to-wait-start)
-  (loop
-     (let ((index (thread-index rt)))
-       (debug-format t "~&Thread ~D tryies to dequeue." index)
-       (let ((pp (dequeue-from (threads-mq rts) index)))
-         ;; Note: dequeue-from is kept on wait untile some queue has an element.
-         (assert pp)
-         (debug-format t "~&Thread ~D starts to process pred-process." index)
-         (let ((*real-thread-index* index))
-           (if (resolved-p pp)
-               (call-pred-process pp)
-               ;; TODO: Adopt more sophisticated waiting.
-               (progn (sleep 0.001)
-                      (queue-pp rts pp))))))))
+  (with-event-loop ()
+    (loop
+       (let ((index (thread-index rt)))
+         (debug-format t "~&Thread ~D tryies to dequeue." index)
+         (let ((pp (dequeue-from (threads-mq rts) index)))
+           ;; Note: dequeue-from is kept on wait untile some queue has an element.
+           (assert pp)
+           (debug-format t "~&Thread ~D starts to process pred-process." index)
+           (let ((*real-thread-index* index))
+             (if (resolved-p pp)
+                 (call-pred-process pp)
+                 ;; TODO: Adopt more sophisticated waiting.
+                 (progn (sleep 0.001)
+                        (queue-pp rts pp)))))))))
 
 (defmethod queue-pp ((rts real-threads) process &optional (pred (lambda () t)))
   (debug-format t "~&Queue pred-process to thread indexed as ~D" *real-thread-index*)
@@ -99,6 +101,7 @@
 ;; ----- debug ----- ;;
 
 (defvar *debug-format-lock* (make-lock))
+(defparameter *debug-print-p* nil)
 
 (defun debug-print (object)
   (when *debug-print-p*

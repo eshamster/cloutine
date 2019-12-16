@@ -3,31 +3,31 @@
   (:export :make-channel
            :close-channel
            :<-chan
-           :chan<-)
+           :chan<-
+           :ch-closed-p)
   (:import-from :cloutine/queue
                 :init-queue
                 :queue
                 :dequeue
                 :queue-length)
+  (:import-from :blackbird
+                :attach
+                :with-promise)
   (:import-from :bordeaux-threads
                 :make-lock
-                :with-lock-held
-                :make-condition-variable
-                :condition-wait
-                :condition-notify))
+                :acquire-lock
+                :release-lock
+                :with-lock-held)
+  (:import-from :cl-cont
+                :defun/cc
+                :let/cc))
 (in-package :cloutine/sync/channel)
-
-;; LIMITATION:
-;; The channel correctly works only when condition-notify notifies to only one waiter.
-;; (In some implementations, it notifies to all waiter.)
 
 (defclass channel ()
   ((queue :initform (init-queue) :reader ch-queue)
-   (wait-cond :initform (make-condition-variable :name "WAIT COND") :reader ch-wait-cond)
-   (notify-cond :initform (make-condition-variable :name "SIG COND") :reader ch-notify-cond)
+   (queue-resolver-queue :initform (init-queue) :reader ch-queue-resolvers)
+   (deqeueue-resolver-queue :initform (init-queue) :reader ch-dequeue-resolvers)
    (lock :initform (make-lock) :accessor ch-lock)
-   (wait-count :initform 0 :accessor ch-wait-count)
-   (notify-count :initform 0 :accessor ch-notify-count)
    (max-length :initarg :max-resource :reader ch-max-resource) ; param
    (closed-p :initform nil :accessor ch-closed-p)))
 
@@ -40,55 +40,68 @@ If max-resource is nil, there is no queue limit."
   "Close channel and broadcast signal to all waiting readers and writers."
   (let ((lock (ch-lock ch)))
     (with-lock-held (lock)
-      (setf (ch-closed-p ch) t)
-      (dotimes (i (ch-wait-count ch))
-        (condition-notify (ch-wait-cond ch)))
-      (dotimes (i (ch-notify-count ch))
-        (condition-notify (ch-notify-count ch))))))
+      (dotimes (i (queue-length (ch-queue-resolvers ch)))
+        (funcall (dequeue (ch-queue-resolvers ch)) nil))
+      (dotimes (i (queue-length (ch-dequeue-resolvers ch)))
+        (funcall (dequeue (ch-dequeue-resolvers ch)) nil nil)))))
 
-(defmethod <-chan ((ch channel))
+(defmacro with-release-lock ((lock) &body body)
+  `(unwind-protect
+        (progn ,@body)
+     (release-lock ,lock)))
+
+(defun/cc <-chan (ch)
   "Read from channel."
   (let ((lock (ch-lock ch))
         (q (ch-queue ch)))
-    (with-lock-held (lock)
-      (flet ((return-if-closed ()
-               (when (ch-closed-p ch)
-                 (return-from <-chan (values nil nil)))))
-        (return-if-closed)
-        (unless (> (queue-length q) 0)
-          (incf (ch-wait-count ch))
-          ;; wait until some value is queued
-          (condition-wait (ch-wait-cond ch) lock)
-          (decf (ch-wait-count ch))
-          (return-if-closed))
-        (assert (> (queue-length q) 0))
-        (let ((res (dequeue q)))
-          (when (> (ch-notify-count ch) 0)
-            (condition-notify (ch-notify-cond ch)))
-          (values res t))))))
+    (acquire-lock lock)
+    (cond ((ch-closed-p ch)
+           (with-release-lock (lock)
+             (release-lock lock)))
+          ((> (queue-length q) 0)
+           (with-release-lock (lock)
+             (let ((res (dequeue q)))
+               (when (> (queue-length (ch-queue-resolvers ch)) 0)
+                 (funcall (dequeue (ch-queue-resolvers ch)) t))
+               res)))
+          (t (let ((promise (with-promise (resolve reject :resolve-fn resolver)
+                              (queue (ch-dequeue-resolvers ch) resolver))))
+               (release-lock lock)
+               (let/cc k
+                 ;; wait until some value is queued
+                 (attach promise
+                         (lambda (val closed-p)
+                           (print closed-p)
+                           (funcall k val)))))))))
 
-(defmethod chan<- ((ch channel) value)
+(defun/cc chan<- (ch value)
   "Write to channel"
   (let ((lock (ch-lock ch))
         (q (ch-queue ch))
         (max-length (ch-max-resource ch)))
-    (with-lock-held (lock)
-      (flet ((check-closed-p ()
-               (when (ch-closed-p ch)
-                 (error "Error: Insert a value into a closed channel")))
-             (enable-queue-p ()
-               (or (null max-length)
-                   (< (queue-length q) max-length))))
-        (check-closed-p)
-        (unless (enable-queue-p)
-          (incf (ch-notify-count ch))
-          ;; wait until some value is dequeued
-          (condition-wait (ch-notify-cond ch) lock)
-          (decf (ch-notify-count ch))
-          (check-closed-p))
-        (assert (enable-queue-p))
-        (queue q value)
-        (when (> (ch-wait-count ch) 0)
-          (condition-notify (ch-wait-cond ch)))))))
+    (acquire-lock lock)
+    (cond ((ch-closed-p ch)
+           (with-release-lock (lock)
+             (error "Error: Insert a value into a closed channel")))
+          ((> (queue-length (ch-dequeue-resolvers ch)) 0)
+           (with-release-lock (lock)
+             ;; Directly path value to a waiting reader.
+             (funcall (dequeue (ch-dequeue-resolvers ch)) value t)))
+          ((or (null max-length)
+               (< (queue-length q) max-length))
+           (with-release-lock (lock)
+             (queue q value)))
+          (t (let ((promise (with-promise (resolve reject :resolve-fn resolver)
+                              (queue (ch-queue-resolvers ch) resolver))))
+               (release-lock lock)
+               (let/cc k
+                 ;; wait until some value is dequeued
+                 (attach promise
+                         (lambda (open-p)
+                           (if open-p
+                               (progn
+                                 (queue q value)
+                                 (funcall k))
+                               (error "Error: Channel is closed when waiting to insert a value"))))))))))
 
 

@@ -10,7 +10,9 @@
                 :with-lock-held
                 :make-semaphore
                 :wait-on-semaphore
-                :signal-semaphore))
+                :signal-semaphore)
+  (:import-from :cl-cont
+                :with-call/cc))
 (in-package :cloutine/sync/wait-group)
 
 (defclass wait-group ()
@@ -41,5 +43,5 @@
 
 (defmacro with-done-wait ((wg) &body body)
   `(unwind-protect
-        (progn ,@body)
+        (with-call/cc ,@body)
      (done-wait ,wg)))
