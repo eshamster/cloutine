@@ -3,11 +3,8 @@
   (:export :make-channel
            :close-channel
            :<-chan
-           :chan<-)
-  (:import-from :cloutine/cloutine
-                :clt
-                :init-cloutine
-                :destroy-cloutine)
+           :chan<-
+           :ch-closed-p)
   (:import-from :cloutine/queue
                 :init-queue
                 :queue
@@ -66,7 +63,7 @@ If max-resource is nil, there is no queue limit."
              (let ((res (dequeue q)))
                (when (> (queue-length (ch-queue-resolvers ch)) 0)
                  (funcall (dequeue (ch-queue-resolvers ch)) t))
-               (values res t))))
+               res)))
           (t (let ((promise (with-promise (resolve reject :resolve-fn resolver)
                               (queue (ch-dequeue-resolvers ch) resolver))))
                (release-lock lock)
@@ -95,39 +92,16 @@ If max-resource is nil, there is no queue limit."
            (with-release-lock (lock)
              (queue q value)))
           (t (let ((promise (with-promise (resolve reject :resolve-fn resolver)
-                              (queue (ch-dequeue-resolvers ch) resolver))))
+                              (queue (ch-queue-resolvers ch) resolver))))
                (release-lock lock)
                (let/cc k
                  ;; wait until some value is dequeued
                  (attach promise
-                         (lambda (closed-p)
-                           (when closed-p
-                             (error "Error: Channel is closed when waiting to insert a value"))
-                           (queue q value)
-                           (funcall k)))))))))
+                         (lambda (open-p)
+                           (if open-p
+                               (progn
+                                 (queue q value)
+                                 (funcall k))
+                               (error "Error: Channel is closed when waiting to insert a value"))))))))))
 
-
-;; --- TEMP: easy-test --- ;;
-
-(defun test ()
-  (init-cloutine 3)
-  (unwind-protect
-       (let ((ch (make-channel)))
-         (clt (chan<- ch 100))
-         (clt (format t "read after write: ~D" (<-chan ch)))
-         ;;
-         (clt (format t "read before write: ~D" (<-chan ch)))
-         (clt (chan<- ch 200))
-         ;;
-         (clt (format t "concat 2 channel: ~D" (+ (<-chan ch) (<-chan ch))))
-         (clt (chan<- ch 300))
-         (clt (sleep 0.5)
-              (chan<- ch 400))
-         (clt (let ((a (<-chan ch)))
-                (format t "bind to variable ~D" a)))
-         (clt (chan<- ch 500)))
-    (progn (sleep 1)
-           (destroy-cloutine)))))
-
-;; (test)
 
