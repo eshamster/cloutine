@@ -41,6 +41,7 @@
                "cloutine/t/queue"
                "cloutine/t/multi-queue"
                "cloutine/t/real-threads"
-               "cloutine/t/channel"
-               "cloutine/t/wait-group")
+               "cloutine/t/cloutine"
+               "cloutine/t/wait-group"
+               "cloutine/t/channel")
   :perform (test-op (o c) (symbol-call :rove '#:run c)))
