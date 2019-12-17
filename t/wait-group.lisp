@@ -13,7 +13,8 @@
   (let ((th (make-thread func)))
     (make-thread (lambda ()
                    (sleep timeout-sec)
-                   (destroy-thread th)))))
+                   (ignore-errors
+                     (destroy-thread th))))))
 
 (deftest wait-group-test
   (testing "Normal case"

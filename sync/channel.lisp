@@ -40,6 +40,7 @@ If max-resource is nil, there is no queue limit."
   "Close channel and broadcast signal to all waiting readers and writers."
   (let ((lock (ch-lock ch)))
     (with-lock-held (lock)
+      (setf (ch-closed-p ch) t)
       (dotimes (i (queue-length (ch-queue-resolvers ch)))
         (funcall (dequeue (ch-queue-resolvers ch)) nil))
       (dotimes (i (queue-length (ch-dequeue-resolvers ch)))

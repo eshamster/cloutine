@@ -26,6 +26,13 @@
      (progn (sleep ,timeout)
             (destroy-cloutine))))
 
+;; Suppress inline to avoid the following compilation error in SBCL.
+;;
+;; note: *INLINE-EXPANSION-LIMIT* (200) was exceeded, probably trying to
+;;   inline a recursive function.
+#+sbcl
+(declaim (notinline cl-cont::fdesignator-to-function/cc))
+
 (defun/cc test-<-chan (ch expected-val expected-closed-p)
   (let ((val (<-chan ch))
         (closed-p (ch-closed-p ch)))

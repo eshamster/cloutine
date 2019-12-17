@@ -28,8 +28,6 @@
                 :with-event-loop))
 (in-package :cloutine/real-threads)
 
-;; TODO: Make test
-
 (defvar *real-thread-index* nil)
 
 (defclass real-thread ()
