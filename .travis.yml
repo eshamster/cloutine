@@ -1,5 +1,4 @@
-sudo: false
-service:
+services:
   - docker
 
 env:
