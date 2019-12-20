@@ -7,10 +7,6 @@
            :*debug-print-p*
            :debug-print
            :debug-format)
-  (:import-from :cloutine/pred-process
-                :pred-process
-                :resolved-p
-                :call-pred-process)
   (:import-from :cloutine/multi-queue
                 :multi-queue
                 :init-multi-queue
@@ -69,32 +65,22 @@
     (loop
        (let ((index (thread-index rt)))
          (debug-format t "~&Thread ~D tryies to dequeue." index)
-         (let ((pp (dequeue-from (threads-mq rts) index)))
-           ;; Note: dequeue-from is kept on wait untile some queue has an element.
-           (assert pp)
-           (debug-format t "~&Thread ~D starts to process pred-process." index)
+         (let ((process (dequeue-from (threads-mq rts) index)))
+           ;; Note: dequeue-from is kept on wait until some queue has an element.
+           (assert (functionp process))
+           (debug-format t "~&Thread ~D starts to process." index)
            (let ((*real-thread-index* index))
-             (if (resolved-p pp)
-                 (call-pred-process pp)
-                 ;; TODO: Adopt more sophisticated waiting.
-                 (progn (sleep 0.001)
-                        (queue-pp rts pp)))))))))
+             (funcall process)))))))
 
-(defmethod queue-pp ((rts real-threads) process &optional (pred (lambda () t)))
-  (debug-format t "~&Queue pred-process to thread indexed as ~D" *real-thread-index*)
+(defmethod queue-pp ((rts real-threads) process)
+  (debug-format t "~&Queue process to thread indexed as ~D" *real-thread-index*)
   (when (threads-destroied-p rts)
     (error "The thread has been destroied."))
   (queue-into (threads-mq rts)
               (if *real-thread-index*
                   *real-thread-index*
                   0)
-              (make-instance 'pred-process
-                             :process process
-                             :pred pred)))
-
-(defmethod get-num-real-thread ((rt real-threads))
-  (length (threads-instances rt)))
-
+              process))
 
 ;; ----- debug ----- ;;
 

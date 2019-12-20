@@ -37,7 +37,6 @@
 (defsystem cloutine/t
   :class :package-inferred-system
   :depends-on (:rove
-               "cloutine/t/pred-process"
                "cloutine/t/queue"
                "cloutine/t/multi-queue"
                "cloutine/t/real-threads"
