@@ -2,7 +2,7 @@
   (:use :cl)
   (:export :start-real-threads
            :destroy-real-threads
-           :queue-pp
+           :queue-process
            ;; --- debug --- ;;
            :*debug-print-p*
            :debug-print
@@ -72,7 +72,7 @@
            (let ((*real-thread-index* index))
              (funcall process)))))))
 
-(defmethod queue-pp ((rts real-threads) process)
+(defmethod queue-process ((rts real-threads) process)
   (debug-format t "~&Queue process to thread indexed as ~D" *real-thread-index*)
   (when (threads-destroied-p rts)
     (error "The thread has been destroied."))

@@ -7,7 +7,7 @@
   (:import-from :cloutine/real-threads
                 :start-real-threads
                 :destroy-real-threads
-                :queue-pp
+                :queue-process
                 :*debug-print-p*
                 :debug-print
                 :debug-format)
@@ -27,11 +27,11 @@
     (setf *real-threads* nil)))
 
 (defmacro cloutine (&body body)
-  `(queue-pp *real-threads*
-             (without-call/cc
-               (lambda ()
-                 (with-call/cc
-                   ,@body)))))
+  `(queue-process *real-threads*
+                  (without-call/cc
+                    (lambda ()
+                      (with-call/cc
+                        ,@body)))))
 
 (defmacro clt (&body body)
   `(cloutine ,@body))
