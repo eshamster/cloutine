@@ -72,7 +72,7 @@
            (let ((*real-thread-index* index))
              (funcall process)))))))
 
-(defmethod queue-process ((rts real-threads) process)
+(defmethod queue-process ((rts real-threads) (process function))
   (debug-format t "~&Queue process to thread indexed as ~D" *real-thread-index*)
   (when (threads-destroied-p rts)
     (error "The thread has been destroied."))
