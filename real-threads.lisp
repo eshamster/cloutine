@@ -43,7 +43,9 @@
     (dotimes (i n)
       (let ((rt (make-instance 'real-thread :index i)))
         (setf (thread-instance rt)
-              (make-thread (lambda () (process-thread rt rts sem-to-wait-start))))
+              (make-thread (lambda ()
+                             (wait-on-semaphore sem-to-wait-start)
+                             (process-thread rt rts))))
         (setf (aref rt-arr i) rt)))
     (setf (threads-array rts) rt-arr)
     (signal-semaphore sem-to-wait-start :count n)
@@ -58,9 +60,7 @@
           (destroy-thread (thread-instance rt))))
       (debug-print :destroyed))))
 
-(defmethod process-thread ((rt real-thread) (rts real-threads) sem-to-wait-start)
-  ;; wait until real-threads is initialized
-  (wait-on-semaphore sem-to-wait-start)
+(defmethod process-thread ((rt real-thread) (rts real-threads))
   (with-event-loop ()
     (loop
        (let ((index (thread-index rt)))
