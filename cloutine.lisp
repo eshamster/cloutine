@@ -7,10 +7,7 @@
   (:import-from :cloutine/real-threads
                 :start-real-threads
                 :destroy-real-threads
-                :queue-process
-                :*debug-print-p*
-                :debug-print
-                :debug-format)
+                :queue-process)
   (:import-from :cl-cont
                 :with-call/cc
                 :without-call/cc))
