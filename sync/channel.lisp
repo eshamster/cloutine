@@ -27,7 +27,7 @@
   ((queue :initform (init-queue) :reader ch-queue)
    (queue-resolver-queue :initform (init-queue) :reader ch-queue-resolvers)
    (deqeueue-resolver-queue :initform (init-queue) :reader ch-dequeue-resolvers)
-   (lock :initform (make-lock) :accessor ch-lock)
+   (lock :initform (make-lock "Channel lock") :accessor ch-lock)
    (max-length :initarg :max-resource :reader ch-max-resource) ; param
    (closed-p :initform nil :accessor ch-closed-p)))
 
@@ -71,7 +71,8 @@ If max-resource is nil, there is no queue limit."
                  ;; wait until some value is queued
                  (attach promise
                          (lambda (val closed-p)
-                           (print closed-p)
+                           ;; TODO: use closed-p
+                           (declare (ignore closed-p))
                            (funcall k val)))))))))
 
 (defun/cc chan<- (ch value)

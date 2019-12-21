@@ -26,7 +26,7 @@
         (locks (make-array n)))
     (dotimes (i n)
       (setf (aref queues i) (init-queue)
-            (aref locks  i) (make-lock)))
+            (aref locks  i) (make-lock (format nil "Multi-Queue lock: ~D" i))))
     (make-instance 'multi-queue
                    :queues queues
                    :locks locks)))

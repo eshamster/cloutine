@@ -81,7 +81,7 @@
 
 ;; ----- debug ----- ;;
 
-(defvar *debug-format-lock* (make-lock))
+(defvar *debug-format-lock* (make-lock "Debug-format lock"))
 (defparameter *debug-print-p* nil)
 
 (defun debug-print (object)
