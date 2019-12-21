@@ -85,9 +85,11 @@ If max-resource is nil, there is no queue limit."
            (with-release-lock (lock)
              (error "Error: Insert a value into a closed channel")))
           ((> (queue-length (ch-dequeue-resolvers ch)) 0)
-           (with-release-lock (lock)
+           (let (resolver)
+             (with-release-lock (lock)
+               (setf resolver (dequeue (ch-dequeue-resolvers ch))))
              ;; Directly path value to a waiting reader.
-             (funcall (dequeue (ch-dequeue-resolvers ch)) value t)))
+             (funcall resover value t)))
           ((or (null max-length)
                (< (queue-length q) max-length))
            (with-release-lock (lock)
