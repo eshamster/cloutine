@@ -89,7 +89,7 @@ If max-resource is nil, there is no queue limit."
              (with-release-lock (lock)
                (setf resolver (dequeue (ch-dequeue-resolvers ch))))
              ;; Directly path value to a waiting reader.
-             (funcall resover value t)))
+             (funcall resolver value t)))
           ((or (null max-length)
                (< (queue-length q) max-length))
            (with-release-lock (lock)
