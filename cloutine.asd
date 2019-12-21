@@ -17,8 +17,7 @@
   :depends-on (:cloutine/main
                :bordeaux-threads
                :cl-cont
-               :blackbird
-               :cl-async)
+               :blackbird)
   :description "cloutine is a prototype of coroutine like goroutine"
   :long-description
   #.(with-open-file (stream (merge-pathnames

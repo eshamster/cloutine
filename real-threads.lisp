@@ -19,9 +19,7 @@
                 :destroy-thread
                 :make-semaphore
                 :wait-on-semaphore
-                :signal-semaphore)
-  (:import-from :cl-async
-                :with-event-loop))
+                :signal-semaphore))
 (in-package :cloutine/real-threads)
 
 (defvar *real-thread-index* nil)
@@ -61,16 +59,15 @@
       (debug-print :destroyed))))
 
 (defmethod process-thread ((rt real-thread) (rts real-threads))
-  (with-event-loop ()
-    (loop
-       (let ((index (thread-index rt)))
-         (debug-format t "~&Thread ~D tryies to dequeue." index)
-         (let ((process (dequeue-from (threads-mq rts) index)))
-           ;; Note: dequeue-from is kept on wait until some queue has an element.
-           (assert (functionp process))
-           (debug-format t "~&Thread ~D starts to process." index)
-           (let ((*real-thread-index* index))
-             (funcall process)))))))
+  (loop
+     (let ((index (thread-index rt)))
+       (debug-format t "~&Thread ~D tryies to dequeue." index)
+       (let ((process (dequeue-from (threads-mq rts) index)))
+         ;; Note: dequeue-from is kept on wait until some queue has an element.
+         (assert (functionp process))
+         (debug-format t "~&Thread ~D starts to process." index)
+         (let ((*real-thread-index* index))
+           (funcall process))))))
 
 (defmethod queue-process ((rts real-threads) (process function))
   (debug-format t "~&Queue process to thread indexed as ~D" *real-thread-index*)
