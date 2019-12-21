@@ -57,8 +57,7 @@ If max-resource is nil, there is no queue limit."
         (q (ch-queue ch)))
     (acquire-lock lock)
     (cond ((ch-closed-p ch)
-           (with-release-lock (lock)
-             (release-lock lock)))
+           (release-lock lock))
           ((> (queue-length q) 0)
            (with-release-lock (lock)
              (let ((res (dequeue q)))
@@ -104,5 +103,3 @@ If max-resource is nil, there is no queue limit."
                                  (queue q value)
                                  (funcall k))
                                (error "Error: Channel is closed when waiting to insert a value"))))))))))
-
-
