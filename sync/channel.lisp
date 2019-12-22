@@ -104,5 +104,8 @@ If max-resource is nil, there is no queue limit."
                            (if open-p
                                (progn
                                  (queue q value)
-                                 (funcall k))
+                                 (release-lock lock)
+                                 (unwind-protect
+                                      (funcall k)
+                                   (acquire-lock lock)))
                                (error "Error: Channel is closed when waiting to insert a value"))))))))))
