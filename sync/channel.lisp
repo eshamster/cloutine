@@ -5,6 +5,8 @@
            :<-chan
            :chan<-
            :ch-closed-p)
+  (:import-from :cloutine/cloutine
+                :clt)
   (:import-from :cloutine/queue
                 :init-queue
                 :queue
@@ -73,7 +75,7 @@ If max-resource is nil, there is no queue limit."
                          (lambda (val closed-p)
                            ;; TODO: use closed-p
                            (declare (ignore closed-p))
-                           (funcall k val)))))))))
+                           (clt (funcall k val))))))))))
 
 (defun/cc chan<- (ch value)
   "Write to channel"
@@ -106,6 +108,6 @@ If max-resource is nil, there is no queue limit."
                                  (queue q value)
                                  (release-lock lock)
                                  (unwind-protect
-                                      (funcall k)
+                                      (clt (funcall k))
                                    (acquire-lock lock)))
                                (error "Error: Channel is closed when waiting to insert a value"))))))))))
