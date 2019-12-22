@@ -34,8 +34,8 @@
 (declaim (notinline cl-cont::fdesignator-to-function/cc))
 
 (defun/cc test-<-chan (ch expected-val expected-closed-p)
-  (let ((val (<-chan ch))
-        (closed-p (ch-closed-p ch)))
+  (let* ((val (<-chan ch))
+         (closed-p (channel-closed-value-p val)))
     (unless closed-p
       (ok (= val expected-val)))
     (if expected-closed-p
@@ -66,14 +66,12 @@
       (clt (with-done-wait (wg)
              (chan<- ch 0)
              (chan<- ch 1)
-             (wait-on-semaphore wait-sem)
              (close-channel ch)
              ;; (ok (signals (chan<- ch 2)))
              ))
       (clt (with-done-wait (wg)
              (test-<-chan ch 0 nil)
              (test-<-chan ch 1 nil)
-             (signal-semaphore wait-sem)
              (test-<-chan ch nil t)))
       (wait-all wg))))
 

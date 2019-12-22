@@ -4,7 +4,8 @@
            :close-channel
            :<-chan
            :chan<-
-           :ch-closed-p)
+           :ch-closed-p
+           :channel-closed-value-p)
   (:import-from :cloutine/cloutine
                 :clt)
   (:import-from :cloutine/queue
@@ -33,6 +34,11 @@
    (max-length :initarg :max-resource :reader ch-max-resource) ; param
    (closed-p :initform nil :accessor ch-closed-p)))
 
+(defclass channel-closed-value () ())
+
+(defun channel-closed-value-p (value)
+  (typep value 'channel-closed-value))
+
 (defun make-channel (&optional max-resource)
   "Make channel.
 If max-resource is nil, there is no queue limit."
@@ -58,13 +64,14 @@ If max-resource is nil, there is no queue limit."
   (let ((lock (ch-lock ch))
         (q (ch-queue ch)))
     (acquire-lock lock)
-    (cond ((ch-closed-p ch)
-           (release-lock lock))
-          ((> (queue-length q) 0)
+    (cond ((> (queue-length q) 0)
            (with-release-lock (lock)
              (when (> (queue-length (ch-queue-resolvers ch)) 0)
                (funcall (dequeue (ch-queue-resolvers ch)) t))
              (dequeue q)))
+          ((ch-closed-p ch)
+           (with-release-lock (lock)
+             (make-instance 'channel-closed-value)))
           (t (let ((promise (with-promise (resolve reject :resolve-fn resolver)
                               (queue (ch-dequeue-resolvers ch) resolver))))
                (release-lock lock)
