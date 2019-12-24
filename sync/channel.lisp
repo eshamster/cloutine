@@ -52,7 +52,7 @@ If max-resource is nil, there is no queue limit."
       (dotimes (i (queue-length (ch-queue-resolvers ch)))
         (funcall (dequeue (ch-queue-resolvers ch)) nil))
       (dotimes (i (queue-length (ch-dequeue-resolvers ch)))
-        (funcall (dequeue (ch-dequeue-resolvers ch)) nil nil)))))
+        (funcall (dequeue (ch-dequeue-resolvers ch)) (make-instance 'channel-closed-value) nil)))))
 
 (defmacro with-release-lock ((lock) &body body)
   `(unwind-protect
