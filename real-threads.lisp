@@ -3,6 +3,7 @@
   (:export :start-real-threads
            :destroy-real-threads
            :queue-process
+           :*real-thread-index*
            ;; --- debug --- ;;
            :*debug-print-p*
            :debug-print
